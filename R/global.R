@@ -37,17 +37,17 @@ funding$Species <- years$cumm[years$Year > 1972]
 
 expenditures <- read.csv("expenditures08_13.csv", header = TRUE, sep = ",")
 
-spending <- filter(expenditures, Status == "E"|Status == "T")%>%
+spending <- as.data.frame(filter(expenditures, Status == "E"|Status == "T"|Status == "E*")%>%
   group_by(Year, scientific)%>%
   summarise(FWS = first(FWS_tot),
-            Fed = first(Fed_tot),
+            OFed = first(other_fed),
             State = first(State_tot),
             Total = first(Species_tot),
             Group = first(Group),
             Common = first(Common),
-            Status = first(Status))
+            Status = first(Status)))
 
-new_FWS <- filter(df0714, Status == "E"|Status == "T")%>%
+new_FWS <- filter(df0714, Status == "E"|Status == "T"|Status == "E*")%>%
   group_by(Year)%>%
   summarise(mn = mean(FWS.Total),
             s = sd(FWS.Total),
@@ -69,3 +69,39 @@ FWS <- group_by(spending, Year)%>%
 FWS <- arrange(rbind(new_FWS, FWS), Year)
 
 FWS$CF2016 <- funding$CF2016[funding$Year > 2003 & funding$Year < 2015]
+
+#create 'Fed' dataframe
+Fed <- filter(spending, Status == "E"|Status == "T")%>%
+  group_by(Year)%>%
+  summarise(mn = mean(OFed),
+            s = sd(OFed),
+            U95 = quantile(OFed, .95),
+            L95 = quantile(OFed, .05),
+            minimum = min(OFed),
+            maximum = max(OFed),
+            top = mean(OFed[OFed > quantile(OFed, .95)]))
+
+new_Fed <- filter(df0714, Status == "E"|Status == "T"|Status == "E*")%>%
+  group_by(Year)%>%
+  summarise(mn = mean(Other.Fed),
+            s = sd(Other.Fed),
+            U95 = quantile(Other.Fed, 0.95),
+            L95 = quantile(Other.Fed, 0.05),
+            minimum = min(Other.Fed),
+            maximum = max(Other.Fed),
+            top = mean(Other.Fed[Other.Fed > quantile(Other.Fed, .95)]))
+
+Fed <- arrange(rbind(new_Fed, Fed), Year)
+
+Fed$CF2016 <- funding$CF2016[funding$Year > 2003 & funding$Year < 2015]
+
+#Create 'states' dataframe
+states <- filter(expenditures, Status == "E"| Status == "T")%>%
+  group_by(Year, scientific, STATE)%>%
+  summarise(state = sum(state_per_cnty),
+            fws = sum(fws_per_cnty))%>%
+group_by(STATE)%>%
+  summarise(species = n_distinct(scientific),
+            state = mean(state),
+            fws = mean(fws))
+
