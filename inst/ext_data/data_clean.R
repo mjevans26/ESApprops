@@ -1,5 +1,18 @@
 library(stringr)
 library(dplyr)
+library(tabulizer)
+setwd("C:Users/mevans/repos/ESApprops/data")
+
+expenditures <- read.csv("expenditures08_13.csv", header = TRUE, sep = ",")
+funding <- read.csv("fundig.csv", header = TRUE, sep = ",")
+
+gerber <- extract_tables("http://www.pnas.org/content/suppl/2016/03/08/1525085113.DCSupplemental/pnas.1525085113.sapp.pdf", pages = 1:26, guess = TRUE, method = "data.frame")
+colnames(gerber[[1]]) <- gerber[[1]][2,]
+for(i in 1:length(gerber)){
+  write.csv(gerber[[i]], file = paste("C:/Users/mevans/repos/ESApprops/",i,".csv", sep = ""))
+}
+gerber <- read.csv("gerber.csv", header = TRUE, sep = ",")
+
 e07 <- extract_tables("https://www.fws.gov/Endangered/esa-library/pdf/2007_expenditures.pdf", pages = seq(7,46,1), guess = TRUE, method = "data.frame")
 e07[40] <- NULL
 e07[[33]]$States.Total <- "$0"
@@ -25,7 +38,7 @@ clean <- function(frame){
   cols <- grep("FWS.Total|Other.Fed|Fed.Total|States.Total", colnames(frame))
   for(i in cols){
     frame[,i]<- sapply(1:length(frame[,i]), function(x,y) if (y[x,i] == "" & y[x,i+1] != ""){
-      y[x,i] <- y[x,i+1]}else{y[x,i] <- y[x,i]}, 
+      y[x,i] <- y[x,i+1]}else{y[x,i] <- y[x,i]},
       y = frame, USE.NAMES = FALSE)
   }
   #frame <- frame[,-which(sapply(frame, function(x) "" %in% x))]
@@ -40,7 +53,7 @@ clean14 <- function(frame){
   cols <- grep("FWS.Total|Other.Fed|Federal.Total|States.Total", colnames(frame))
   for(i in cols){
     frame[,i]<- sapply(1:length(frame[,i]), function(x,y) if (y[x,i] == "" & y[x,i+1] != ""){
-      y[x,i] <- y[x,i+1]}else{y[x,i] <- y[x,i]}, 
+      y[x,i] <- y[x,i+1]}else{y[x,i] <- y[x,i]},
       y = frame, USE.NAMES = FALSE)
   }
   #frame <- frame[,-which(sapply(frame, function(x) "" %in% x))]
@@ -63,5 +76,3 @@ df2014[,2:6] <- sapply(df2014[,2:6], function(x) as.numeric(gsub("\\$|,", "", x)
 
 
 
-
-as.numeric(gsub("\\$|,", "", i))

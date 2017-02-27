@@ -1,10 +1,17 @@
+library(dplyr)
+library(ecosscraper)
 library(ggplot2)
 library(plotly)
-library(dplyr)
+library(shinydashboard)
+library(stringr)
 library(tidyr)
-setwd("C:/Users/mevans/repos/ESApprops")
+library(viridis)
 
-funding <- read.csv("funding.csv", header = TRUE, sep = ",")
+load("data/app_data.R")
+data("TECP_domestic")
+
+gerber2 <- group_by(gerber, O_U, change)%>%
+  summarise( count = n())
 
 #create 'years' dataframe
 years <- mutate(TECP_domestic, Year = substr(First_Listed,9,12))%>%
@@ -35,10 +42,9 @@ years <- mutate(years, cumm = cumsum(Total))
 
 funding$Species <- years$cumm[years$Year > 1972]
 
-expenditures <- read.csv("expenditures08_13.csv", header = TRUE, sep = ",")
 
 spending <- as.data.frame(filter(expenditures, Status == "E"|Status == "T"|Status == "E*")%>%
-  group_by(Year, scientific)%>%
+  group_by(Year, scientific, Population)%>%
   summarise(FWS = first(FWS_tot),
             OFed = first(other_fed),
             State = first(State_tot),
@@ -104,4 +110,18 @@ group_by(STATE)%>%
   summarise(species = n_distinct(scientific),
             state = mean(state),
             fws = mean(fws))
+
+Years1 <- filter(expenditures, Status == "E"|Status == "T")%>%
+  group_by(Year)%>%
+  summarise(STATE = sum(state_per_cnty),
+            FED = sum(fed_per_cnty))
+
+Years2 <- filter(df0714, Status == "E"|Status == "T")%>%
+  group_by(Year)%>%
+  summarise(STATE = sum(States.Total),
+            FED = sum(Fed.Total))
+
+Years <- arrange(rbind(Years1, Years2), Year)
+Years$CF2016 <- funding$CF2016[funding$Year > 2003 & funding$Year < 2015]
+
 
