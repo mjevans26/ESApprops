@@ -1,13 +1,14 @@
 library(dplyr)
 library(ecosscraper)
 library(ggplot2)
+library(highcharter)
 library(plotly)
 library(shinydashboard)
 library(stringr)
 library(tidyr)
 library(viridis)
 
-load("data/app_data.R")
+load("data/app_data.RData")
 data("TECP_domestic")
 
 gerber2 <- group_by(gerber, O_U, change)%>%

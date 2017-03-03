@@ -16,13 +16,14 @@ plot_ly(type = "scatter", mode = "lines", line = list(color = "purple"))%>%
           text = ~paste("$", format(mn*CF2016, big.mark = ",", big.interval = 3), "in ", Year), hoverinfo = "text", visible = F)%>%
 
   layout(hovermode = "closest", font = list(color = "black"),
+         title = "Federal Expenditures on ESA Listed Species",
          xaxis = list(title = "Year"),
          yaxis = list(title = "Spending per Listed Species", rangemode = "tozero"),
          legend = list(x = 0.8, y = 0.15, bordercolor = "black", borderwidth = 1),
          updatemenus = list(
            list(type = "buttons",
                 title = "butt",
-                y = 0.25,
+                y = 0.95,
                 x = 1,
                 buttons = list(
                   list(method = "update",
