@@ -1,3 +1,4 @@
+tree_graph <- function(input, output, session){
 plot_ly(data = funding, x = ~Year)%>%
   add_trace(y = ~ Recovery*CF2016 - lag(Recovery*CF2016), type = "scatter", mode = "lines", name = "Recovery",
             line = list(color = "red"),
@@ -33,3 +34,37 @@ plot_ly(data = funding, x = ~Year)%>%
          #yaxis2 = list(anchor = "yaxis", overlaying = "y", side = "right", showticklabels = T),
          legend = list(bgcolor = "none", orientation = 'h', x = 0, tracegroupgap = 1)
          )
+
+#plot_ly(z = ~matrix(gerber2$count, nrow = 3, ncol = 3),
+#        x = ~c("Adequate", "Over", "Under"), y = ~c("Decreased", "Increased", "No Change"),
+#        type = "heatmap",
+#        text = ~paste(~z, "species were", ~x, "funded and", ~y, sep = " "), hoverinfo = "text")
+
+#plot_ly(data = gerber, x = ~received, y = ~Status, type = "histogram2d",
+#        autobinx = F, xbins = list(start = 0, end = 3, size = 0.2),
+#        autobiny = F, ybins = list(start = -10, end = 10, size = 1),
+#        colorscale = "Viridis",
+#        text = ~paste(~z, "species were", ~x, "funded and", ~y, sep = " "), hoverinfo = "text")
+
+
+output$tree <- renderHighchart({
+  highchart()%>%
+    hc_add_series(data = stat_fund, type = "treemap", allowDrillToNode = F, #layoutAlgorithm = "squarified",
+                  levels = list(list(level = 1,
+                                     borderColor = "white",
+                                     borderWidth = 5,
+                                     dataLabels = list(enabled = "true",
+                                                       align = "left",
+                                                       verticalAlign = "top",
+                                                       style = list(fontSize = "14px"))),
+                                list(level = 2,
+                                     layoutAlgorithm = "squarified",
+                                     borderColor = "grey",
+                                     borderWidth = 0,
+                                     dataLabels = list(enabled = FALSE,
+                                                       align = "center",
+                                                       verticalAlign = "middle"))))%>%
+    #hc_title(text = paste("ESA Listings", input$tx_select))%>%
+    hc_tooltip(pointFormat = "{point.value} {point.parent} funded species <b>{point.name}<\b>")
+})
+}

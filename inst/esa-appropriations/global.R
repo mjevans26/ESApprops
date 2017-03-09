@@ -1,5 +1,6 @@
 library(dplyr)
 library(ecosscraper)
+library(highcharter)
 library(ggplot2)
 library(highcharter)
 library(plotly)
@@ -112,17 +113,35 @@ group_by(STATE)%>%
             state = mean(state),
             fws = mean(fws))
 
+#Create Years dataframe
 Years1 <- filter(expenditures, Status == "E"|Status == "T")%>%
   group_by(Year)%>%
   summarise(STATE = sum(state_per_cnty),
-            FED = sum(fed_per_cnty))
+            FWS = sum(fws_per_cnty),
+            FED = sum(other_fed_per_cnty))
 
 Years2 <- filter(df0714, Status == "E"|Status == "T")%>%
   group_by(Year)%>%
   summarise(STATE = sum(States.Total),
-            FED = sum(Fed.Total))
+            FWS = sum(FWS.Total),
+            FED = sum(Other.Fed))
 
 Years <- arrange(rbind(Years1, Years2), Year)
 Years$CF2016 <- funding$CF2016[funding$Year > 2003 & funding$Year < 2015]
 
-
+#define pallete funciton converting status names to colors
+stat_pal <- function(status){switch(status,
+                                    "Increased" = substr(magma(2)[1],1,7),
+                                    "Decreased" = "red",
+                                    "No Change" = substr(magma(2)[2],1,7)
+                                    )}
+rm(stat_fund)
+stat_fund <- list()
+for(i in unique(gerber2$O_U)){
+  ls1 <- list(name = i, id = i, value = sum(gerber2$count[gerber2$O_U == i]), color = NA)
+  stat_fund[[length(stat_fund)+1]] <- ls1
+}
+for(i in 1:length(gerber2$count)){
+  ls2 <- list(parent = gerber2$O_U[i], name = gerber2$change[i], value = gerber2$count[i], color = stat_pal(gerber2$change[i]))
+  stat_fund[[length(stat_fund)+1]] <- ls2
+}

@@ -33,7 +33,8 @@ body <- dashboardBody(
 
    tabPanel(h4("Funding Needs"), id = "panel2", fluidPage(
     fluidRow(
-     column(8, plotlyOutput("pie"), height = 600),
+     column(4, plotlyOutput("pie"), height = 600),
+     column(4, highchartOutput("tree"), height = 600),
      column(4,
       h2("Starved to Death"),
       h4("Many species have failed to recover due to insufficient funding.

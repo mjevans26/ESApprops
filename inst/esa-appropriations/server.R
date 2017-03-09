@@ -3,12 +3,14 @@ library(shiny)
 source("budget_graph.R")
 source("spending_graph.R")
 source("simple_graphs.R")
+source("budget_change.R")
 
 
 shinyServer(function(input,output, session){
   spending_graph(input, output, session)
   simple_graphs(input, output, session)
   budget_graph(input, output, session)
+  tree_graph(input, output, session)
 
   output$defenders <- renderImage({
     width <- session$clientData$output_defenders_width

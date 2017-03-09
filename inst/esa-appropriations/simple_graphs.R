@@ -72,10 +72,12 @@ output$states <- renderPlotly({
 
 output$years <- renderPlotly({
   plot_ly(Years, x = ~Year)%>%
-    add_trace(y = ~FED*CF2016, type = "bar", name = "Federal Expenditures", marker = list(color = substr(viridis(4),1,7)[1]),
-              text = ~paste("$",format(FED*CF2016, big.mark = ",", big.interval = 3), " spent by Federal agencies in", Year, sep = ""), hoverinfo = "text")%>%
-    add_trace(y = ~STATE*CF2016, type = "bar", name = "State Expenditures", marker = list(color = substr(viridis(4),1,7)[4]),
+    add_trace(y = ~FED*CF2016, type = "bar", name = "Other Federal", marker = list(color = substr(viridis(4),1,7)[1]),
+              text = ~paste("$",format(FED*CF2016, big.mark = ",", big.interval = 3), " spent by Other Federal agencies in", Year, sep = ""), hoverinfo = "text")%>%
+    add_trace(y = ~STATE*CF2016, type = "bar", name = "State", marker = list(color = substr(viridis(4),1,7)[4]),
               text = ~paste("$",format(STATE*CF2016, big.mark = ",", big.interval = 3), " spent by State agencies in", Year, sep = ""), hoverinfo = "text")%>%
+    add_trace(y = ~FWS*CF2016, type = "bar", name = "FWS", marker = list(color = substr(viridis(4),1,7)[2]),
+              text = ~paste("$",format(FWS*CF2016, big.mark = ",", big.interval = 3), " spent by FWS in ", Year, sep = ""), hoverinfo = "text")%>%
     layout(hovermode = "closest", font = list(color = "black"),
            title = "Timeline of Total Federal and state Expenditures<br>on Listed Species",
            xaxis = list(title = "Fiscal Year"),
