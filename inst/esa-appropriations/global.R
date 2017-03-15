@@ -10,11 +10,20 @@ library(tidyr)
 library(viridis)
 
 load("data/app_data.RData")
-data("TECP_domestic")
+
 
 gerber2 <- group_by(gerber, O_U, change)%>%
   summarise( count = n())
 
+clrs <- data.frame(change = c("Adequate", "Over", "Under"), color = rev(substr(viridis(3),1,7)))
+clrs[] <- lapply(clrs, as.character)
+gerber2$color <- clrs$color[match(gerber2$O_U, clrs$change)]
+re <- function(var){switch(var,
+                         "Decreased" = "Declined",
+                         "Increased" = "Improved",
+                         "No Change" = "Did not Change")}
+gerber2$change <- vapply(gerber2$change, re, c(""), USE.NAMES = FALSE)
+gerber2$O_U[gerber2$O_U == "Adequate"] <- "Adequately"
 #create 'years' dataframe
 years <- mutate(TECP_domestic, Year = substr(First_Listed,9,12))%>%
   select(Year, Federal_Listing_Status, Lead_Region)%>%
@@ -107,11 +116,13 @@ Fed$CF2016 <- funding$CF2016[funding$Year > 2003 & funding$Year < 2015]
 states <- filter(expenditures, Status == "E"| Status == "T")%>%
   group_by(Year, scientific, STATE)%>%
   summarise(state = sum(state_per_cnty),
-            fws = sum(fws_per_cnty))%>%
+            fws = sum(fws_per_cnty),
+            fed = sum(fed_per_cnty))%>%
 group_by(STATE)%>%
   summarise(species = n_distinct(scientific),
             state = mean(state),
-            fws = mean(fws))
+            fws = mean(fws),
+            fed = mean(fed))
 
 #Create Years dataframe
 Years1 <- filter(expenditures, Status == "E"|Status == "T")%>%
@@ -131,17 +142,17 @@ Years$CF2016 <- funding$CF2016[funding$Year > 2003 & funding$Year < 2015]
 
 #define pallete funciton converting status names to colors
 stat_pal <- function(status){switch(status,
-                                    "Increased" = substr(magma(2)[1],1,7),
-                                    "Decreased" = "red",
-                                    "No Change" = substr(magma(2)[2],1,7)
+                                    "Under" = substr(viridis(3)[1],1,7),
+                                    "Adequate" = substr(viridis(3)[2],1,7),
+                                    "Over" = substr(viridis(3)[3],1,7)
                                     )}
-rm(stat_fund)
+#rm(stat_fund)
 stat_fund <- list()
 for(i in unique(gerber2$O_U)){
-  ls1 <- list(name = i, id = i, value = sum(gerber2$count[gerber2$O_U == i]), color = NA)
+  ls1 <- list(name = i, id = i, value = sum(gerber2$count[gerber2$O_U == i]), color = stat_pal(i))
   stat_fund[[length(stat_fund)+1]] <- ls1
 }
 for(i in 1:length(gerber2$count)){
-  ls2 <- list(parent = gerber2$O_U[i], name = gerber2$change[i], value = gerber2$count[i], color = stat_pal(gerber2$change[i]))
+  ls2 <- list(parent = gerber2$O_U[i], name = gerber2$change[i], value = gerber2$count[i], color = NA)
   stat_fund[[length(stat_fund)+1]] <- ls2
 }

@@ -3,57 +3,34 @@ simple_graphs <- function(input, output, session){
 
 output$pie <- renderPlotly({
   plot_ly()%>%
-    add_pie( data = count(gerber, O_U), labels = ~ O_U, values = ~ n, name = "Funding",
+    add_pie( data = count(gerber, O_U), labels = c("Under (<0.90)", "Adequate", "Over (>2x)"), values = ~ n, name = "Funding",
              marker = list(colors = rev(substr(viridis(3),1,7))),
              textfont = list(size = 16), legendgroup = "Funding", textinfo = "percent", textposition = "outside",
-             text = ~paste(n, " species were<br>",c("adequately funded", "over funded", "under funded"), sep = ""),
+             text = ~paste(n, " Species were<br>", c("Adequately funded", "Over funded", "Under funded"), sep = ""),
              hoverinfo = "text")%>%
-   add_pie(data = count(gerber, change), labels = ~ change, values = ~n, name = "Status",
-           textfont = list(size = 16), legendgroup = "Funding", textinfo = "percent", textposition = "outside",
-           marker = list(colors = c("red", substr(magma(2),1,7))), legendgroup = "Status",
-           text = ~paste(n, " species showed<br>", c("decreasing populations", "increasing populations", "no change in population"), sep = ""), hoverinfo = "text",
-           visible = F)%>%
+#   add_pie(data = count(gerber, change), labels = ~ change, values = ~n, name = "Status",
+#           textfont = list(size = 16), legendgroup = "Funding", textinfo = "percent", textposition = "outside",
+#           marker = list(colors = c("red", substr(magma(2),1,7))), legendgroup = "Status",
+#           text = ~paste(n, " species showed<br>", c("decreasing populations", "increasing populations", "no change in population"), sep = ""), hoverinfo = "text",
+#           visible = F)%>%
     layout(hovermode = "closest", font = list(color = "black"),
-           legend = list(x = 0.95, y = 0, bordercolor = "black", borderwidth = 1),
+           showlegend = FALSE,
+           legend = list(x = 0.95, y = 0.95, bordercolor = "black", borderwidth = 1),
            xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-           yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-           updatemenus = list(
-             list(type = "buttons",
-                  y = 0.95,
-                  x = 1.1,
-                  buttons = list(
-                    list(method = list("update"),
-                         args = list("visible", list(T,F)),
-                         label = "Funding"),
-                    list(method = list("update"),
-                         args = list("visible", list(F,T)),
-                         label = "Status")
-                  )
-             )#,
-             #list(type = "buttons",
-             #     y=0,
-             #     x=1.1,
-             #     buttons = list(
-             #       list(method = "restyle",
-             #            args = list("visible", list(T,F)),
-             #            label = "Funding"),
-              #      list(method = "restyle",
-             #            args = list("visible", list(F,T)),
-              #           label = "Status")
-              #    ))
-           )
+           yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE)
     )
 })
 
 output$bar <- renderPlotly({
-  plot_ly(data = gerber2, x = ~O_U, y = ~ count, color = ~change, type = "bar",
-          marker = list(line = list(color = rev(substr(viridis(3),1,7)), width = 2),
-                        color = rep(c("red", "white", "black"),3)),
-          text = ~paste(count, "funded species"),hoverinfo = "text")%>%
+  plot_ly()%>%
+    add_trace(data = gerber2, x = ~change, y = ~ count, color = ~paste(O_U, "funded"), colors = ~color, type = "bar",
+          marker = list(line = list(color = "black", width = 2)),
+          text = ~paste(count, O_U, "funded species", change),hoverinfo = "text")%>%
     layout(hovermode = "closest", font = list(color = "black"), barmode = "stack",
+           legend = list(x = 0.6, y = 0.95, bordercolor = "black", borderwidth = 1),
            yaxis = list(title = "Number of Species"),
-           xaxis = list(title = "Recovery Funding", tickmode = "array", tickangle = 0, tickvals = c("Ad", "Over", "Under"), ticktext = c("Adequate", "Over", "Under")))
-
+           xaxis = list(title = "Recovery Status (1989 - 2011)", tickmode = "auto", tickangle = 0)
+)
 })
 
 output$states <- renderPlotly({
@@ -72,16 +49,16 @@ output$states <- renderPlotly({
 
 output$years <- renderPlotly({
   plot_ly(Years, x = ~Year)%>%
-    add_trace(y = ~FED*CF2016, type = "bar", name = "Other Federal", marker = list(color = substr(viridis(4),1,7)[1]),
-              text = ~paste("$",format(FED*CF2016, big.mark = ",", big.interval = 3), " spent by Other Federal agencies in", Year, sep = ""), hoverinfo = "text")%>%
-    add_trace(y = ~STATE*CF2016, type = "bar", name = "State", marker = list(color = substr(viridis(4),1,7)[4]),
-              text = ~paste("$",format(STATE*CF2016, big.mark = ",", big.interval = 3), " spent by State agencies in", Year, sep = ""), hoverinfo = "text")%>%
     add_trace(y = ~FWS*CF2016, type = "bar", name = "FWS", marker = list(color = substr(viridis(4),1,7)[2]),
               text = ~paste("$",format(FWS*CF2016, big.mark = ",", big.interval = 3), " spent by FWS in ", Year, sep = ""), hoverinfo = "text")%>%
-    layout(hovermode = "closest", font = list(color = "black"),
-           title = "Timeline of Total Federal and state Expenditures<br>on Listed Species",
+    add_trace(y = ~FED*CF2016, type = "bar", name = "Other Federal", marker = list(color = substr(viridis(4),1,7)[1]),
+              text = ~paste("$",format(FED*CF2016, big.mark = ",", big.interval = 3), " spent by Other Federal agencies in", Year, sep = ""), hoverinfo = "text")%>%
+    add_trace(y = ~STATE*CF2016, type = "bar", name = "All States", marker = list(color = substr(viridis(4),1,7)[4]),
+              text = ~paste("$",format(STATE*CF2016, big.mark = ",", big.interval = 3), " spent by State agencies in", Year, sep = ""), hoverinfo = "text")%>%
+        layout(hovermode = "closest", font = list(color = "black"),
+           title = "Comparing Federal and State Spending on Listed Species",
            xaxis = list(title = "Fiscal Year"),
-           yaxis = list(title = "Expenditures (adjusted to 2016 Dollars)"),
-           legend = list(x = 0.10, y = 0.95, bordercolor = "black", borderwidth = 1))
+           yaxis = list(title = "Expenditures (2016 Dollars)"),
+           legend = list(x = 0.05, y = 0.95, bordercolor = "black", borderwidth = 1))
 })
 }
