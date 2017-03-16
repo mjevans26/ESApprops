@@ -29,7 +29,7 @@ output$bar <- renderPlotly({
     layout(hovermode = "closest", font = list(color = "black"), barmode = "stack",
            legend = list(x = 0.6, y = 0.95, bordercolor = "black", borderwidth = 1),
            yaxis = list(title = "Number of Species"),
-           xaxis = list(title = "Recovery Status (1989 - 2011)", tickmode = "auto", tickangle = 0)
+           xaxis = list(title = "Recovery Status (1989 - 2011)", tickmode = "array", tickvals = list("Declined", "Did not Change", "Improved"), ticktext = list("Declined", "No Change", "Improved"), tickangle = 0)
 )
 })
 
@@ -49,11 +49,11 @@ output$states <- renderPlotly({
 
 output$years <- renderPlotly({
   plot_ly(Years, x = ~Year)%>%
-    add_trace(y = ~FWS*CF2016, type = "bar", name = "FWS", marker = list(color = substr(viridis(4),1,7)[2]),
+    add_trace(y = ~FWS*CF2016, type = "bar", name = "FWS", marker = list(color = substr(viridis(3),1,7)[2]),
               text = ~paste("$",format(FWS*CF2016, big.mark = ",", big.interval = 3), " spent by FWS in ", Year, sep = ""), hoverinfo = "text")%>%
-    add_trace(y = ~FED*CF2016, type = "bar", name = "Other Federal", marker = list(color = substr(viridis(4),1,7)[1]),
+    add_trace(y = ~FED*CF2016, type = "bar", name = "Other Federal", marker = list(color = substr(viridis(3),1,7)[1]),
               text = ~paste("$",format(FED*CF2016, big.mark = ",", big.interval = 3), " spent by Other Federal agencies in", Year, sep = ""), hoverinfo = "text")%>%
-    add_trace(y = ~STATE*CF2016, type = "bar", name = "All States", marker = list(color = substr(viridis(4),1,7)[4]),
+    add_trace(y = ~STATE*CF2016, type = "bar", name = "All States", marker = list(color = substr(viridis(3),1,7)[3]),
               text = ~paste("$",format(STATE*CF2016, big.mark = ",", big.interval = 3), " spent by State agencies in", Year, sep = ""), hoverinfo = "text")%>%
         layout(hovermode = "closest", font = list(color = "black"),
            title = "Comparing Federal and State Spending on Listed Species",

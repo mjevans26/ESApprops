@@ -6,36 +6,36 @@ budget_graph <- function(input, output, session){
               fill = "tozeroy", line = list(color = "grey"))%>%
 
     add_trace(y = ~Recovery*CF2016/Species, type = "scatter", mode = "lines",
-              name = "Recovery<br>budget", line = list(color = "red"),
+              name = "Recovery<br>budget", line = list(color = substr(viridis(4),1,7)[1]),
               text = ~paste("$",format(Recovery*CF2016/Species, big.mark = ",", big.interval = 3),"per species budgeted for<br>Recovery in", Year, sep=" "), hoverinfo = "text")%>%
 
       add_trace(y = ~Recovery*CF2016, type = "scatter", mode = "lines", visible = F,
-                name = "Recovery<br>budget", line = list(color = "red"),
+                name = "Recovery<br>budget", line = list(color = substr(viridis(4),1,7)[1]),
                 text = ~paste("$",format(Recovery*CF2016, big.mark = ",", big.interval = 3),"budgeted for<br>Recovery in", Year, sep=" "), hoverinfo = "text")%>%
 
     add_trace(y = ~ConsultOld*CF2016/Species, type = "scatter", mode = "lines",
-              name = "Consultation<br>budget", line = list(color = "purple"),
+              name = "Consultation<br>budget", line = list(color = substr(viridis(4),1,7)[2]),
               text = ~paste("$",format(ConsultOld*CF2016/Species, big.mark = ",", big.interval = 3),"per species budgeted for<br>Consultation in", Year, sep=" "), hoverinfo = "text")%>%
 
     add_trace(y = ~ConsultOld*CF2016, type = "scatter", mode = "lines", visible = F,
-              name = "Consultation<br>budget", line = list(color = "purple"),
+              name = "Consultation<br>budget", line = list(color = substr(viridis(4),1,7)[2]),
               text = ~paste("$",format(ConsultOld*CF2016, big.mark = ",", big.interval = 3),"budgeted for<br>Consultation in", Year, sep=" "), hoverinfo = "text", visible = F)%>%
 
     add_trace(y = ~ESP*CF2016/Species, type = "scatter", mode = "lines",
-              name = "Endangered Species<br>budget", line = list(color = "blue"),
+              name = "Endangered Species<br>budget", line = list(color = substr(viridis(4),1,7)[3]),
               text = ~paste("$",format(ESP*CF2016/Species, big.mark = ",", big.interval = 3),"per species budgeted for<br>Endangered Species Programs in", Year, sep=" "), hoverinfo = "text")%>%
 
     add_trace(y = ~ESP*CF2016, type = "scatter", mode = "lines",
-              name = "Endangered Species<br>budget", line = list(color = "blue"), visible = F,
+              name = "Endangered Species<br>budget", line = list(color = substr(viridis(4),1,7)[3]), visible = F,
               text = ~paste("$",format(ESP*CF2016, big.mark = ",", big.interval = 3),"budgeted for<br>Endangered Species Programs in", Year, sep=" "), hoverinfo = "text")%>%
 
     add_trace(y = ~ESOld*CF2016/Species, type = "scatter", mode = "lines", legendgroup = "2",
               text = ~paste("$", format(ESOld*CF2016/Species, big.mark = ",", big.interval = 3), "per species budgeted for <br> Ecolocial Services in", Year, sep = " "), hoverinfo = "text",
-              name = "Ecological Services<br>budget", line = list(color = "orange"))%>%
+              name = "Ecological Services<br>budget", line = list(color = substr(viridis(4),1,7)[4]))%>%
 
     add_trace(y = ~ESOld*CF2016, type = "scatter", mode = "lines", visible = F,
               text = ~paste("$", format(ESOld*CF2016, big.mark = ",", big.interval = 3), "budgeted for <br> Ecolocial Services in", Year, sep = " "), hoverinfo = "text",
-              name = "Ecological Services<br>budget", line = list(color = "orange"))%>%
+              name = "Ecological Services<br>budget", line = list(color = substr(viridis(4),1,7)[4]))%>%
 
       layout(hovermode = "compare", font = list(color = "black"),
            title = "Timeline of ESA Appropriations",

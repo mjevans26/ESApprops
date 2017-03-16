@@ -12,14 +12,14 @@ shinyServer(function(input,output, session){
   tree_graph(input, output, session)
 
   output$defenders <- renderImage({
-    width <- session$clientData$output_defenders_width
-    if (width > 100) {
-      width <- 100
+    height <- session$clientData$output_defenders_height
+    if (height > 80) {
+      height <- 80
     }
     list(src = "01_DOW_LOGO_COLOR_300-01.png",
          contentType = "image/png",
          alt = "Defenders of Wildlife", br(), "Endangered Species Program",
-         width=width)
+         height = height)
   }, deleteFile=FALSE)
 
   output$foxes <- renderImage({

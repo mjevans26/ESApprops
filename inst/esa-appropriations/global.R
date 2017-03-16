@@ -11,10 +11,11 @@ library(viridis)
 
 load("data/app_data.RData")
 
-
+#create summary data from Gerber 2016, define color associations
 gerber2 <- group_by(gerber, O_U, change)%>%
   summarise( count = n())
 
+gerber2 <- ungroup(gerber2)
 clrs <- data.frame(change = c("Adequate", "Over", "Under"), color = rev(substr(viridis(3),1,7)))
 clrs[] <- lapply(clrs, as.character)
 gerber2$color <- clrs$color[match(gerber2$O_U, clrs$change)]
@@ -24,7 +25,8 @@ re <- function(var){switch(var,
                          "No Change" = "Did not Change")}
 gerber2$change <- vapply(gerber2$change, re, c(""), USE.NAMES = FALSE)
 gerber2$O_U[gerber2$O_U == "Adequate"] <- "Adequately"
-#create 'years' dataframe
+
+#create 'years' dataframe for listings by year
 years <- mutate(TECP_domestic, Year = substr(First_Listed,9,12))%>%
   select(Year, Federal_Listing_Status, Lead_Region)%>%
   filter(Federal_Listing_Status == "Endangered"|Federal_Listing_Status == "Threatened")%>%
@@ -51,6 +53,7 @@ years$Total <- years$Endangered + years$Threatened
 
 years <- mutate(years, cumm = cumsum(Total))
 
+#add number of listed species each year to funding data frame
 funding$Species <- years$cumm[years$Year > 1972]
 
 

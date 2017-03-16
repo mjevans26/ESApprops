@@ -56,9 +56,9 @@ body <- dashboardBody(
      column(4,
       h2("Species Recovery Has Been",br(),"Chronically Underfunded"),
       h4("Congress has provided only a small fraction of the funds needed for recovery.
-          Data from Gerber (2016) shown here illustrates this shortchanging.
-         From 1980 to 2014, the vast majorty of listed species with recovery plans were underfunded - receiving
-         less than 90% of the amount necessary for recovery.  Because funding is strongly correlated with
+          Data from Gerber (2016) shown here illustrate this shortchanging.
+         From 1980 to 2014, the vast majority of listed species with recovery plans were underfunded - receiving
+         less than 90% of the amount needed for recovery.  Because funding is correlated with
          improvement in species status, only 15% of species improved in status from 1989 - 2011."),
       br(),
       h6("Source: ", a(href = "http://www.pnas.org/content/113/13/3563.full?tab=ds", "Gerber, LR (2016). PNAS 113(13): 3563-3566"))
