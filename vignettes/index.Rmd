@@ -15,6 +15,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
+setwd("C:/Users/mevans/repos/ESApprops")
 library(dplyr)
 library(ecosscraper)
 library(highcharter)
@@ -203,21 +204,20 @@ Several fox species (_Urocyon littoralis_) of the Channel Islands were recovered
 
 ### Species Recovery Has Been Chronically Underfunded
 
-Congress has provided only a small fraction of the funds needed for recovery. Data from Gerber (2016) shown here illustrate this shortchanging. From 1980 to 2014, the vast majority of listed species with recovery plans were underfunded - receiving less than 90% of the amount needed for recovery. Because funding is correlated with improvement in species status, only 15% of species improved in status from 1989 - 2011.
+Congress has provided only a small fraction of the funds needed for recovery. Data from Gerber (2016) shown here illustrate this shortchanging. From 1980 to 2014, the vast majority of listed species with recovery plans were underfunded - receiving less than 90% of the amount needed for recovery.
 
 ```{r p1, echo=FALSE, warning=FALSE, error=FALSE}
 fluidPage(
   fluidRow(
-    column(6,
+    column(12,
       plot_ly() %>% 
       add_pie(
         data = count(gerber, O_U),
-        labels = c("Under (<0.90)", "Adequate", "Over (>2x)"),
+        labels = c("Adequately funded", "Over funded", "Under funded"),
         values = ~ n,
         name = "Funding",
         marker = list(colors = rev(substr(viridis(3),1,7))),
         textfont = list(size = 16),
-        legendgroup = "Funding",
         textinfo = "percent",
         textposition = "outside",
         text = ~paste(
@@ -227,7 +227,7 @@ fluidPage(
       layout(
         hovermode = "closest",
         font = list(color = "black"),
-        showlegend = FALSE,
+        showlegend = TRUE,
         legend = list(x = 0.95,
                       y = 0.95,
                       bordercolor = "black",
@@ -238,29 +238,6 @@ fluidPage(
         yaxis = list(showgrid = FALSE,
                      zeroline = FALSE,
                      showticklabels = FALSE)
-      )
-    ),
-    column(6,
-      plot_ly() %>%
-      add_trace(
-        data = gerber2, 
-        x = ~change, 
-        y = ~ count, 
-        color = ~paste(O_U, "funded"), 
-        colors = ~color,
-        type = "bar",
-        marker = list(line = list(color = "black", width = 2)),
-        text = ~paste(count, O_U, "funded species", change),
-        hoverinfo = "text") %>%
-      layout(
-        hovermode = "closest", 
-        font = list(color = "black"), 
-        barmode = "stack",
-          legend = list(x = 0.6, y = 0.95, 
-                        bordercolor = "black", borderwidth = 1),
-          yaxis = list(title = "Number of Species"),
-          xaxis = list(title = "Recovery Status (1989 - 2011)", 
-                       tickmode = "auto", tickangle = 0)
       )
     )
   )
@@ -273,7 +250,7 @@ fluidPage(
 
 ### Funding Has Not Kept Pace with Species Listings
 
-Not only has Congress underfunded recovery for decades, but the average dollar per species has decreased since 2010. This drop has occurred across all endangered species programs at FWS. This decline is the result of the ESA budget consistently decreasing, combined with the continued increase in the number of listed species. 
+Not only has Congress underfunded recovery for decades, but the amount of funding per species<sup>*</sup> has decreased since 2010. This drop has occurred across all endangered species programs at FWS. This decline is the result of the ESA budget decreasing since 2010, combined with the continued increase in the number of listed species. Prior to this decline, the per species budget had been stagnant for almost a decade. 
 
 ```{r p2, echo=FALSE, warning=FALSE, error=FALSE}
 fluidPage(
@@ -358,7 +335,7 @@ fluidPage(
   )
 )
 ```
-
+<p style='font-size:small'><sup>*</sup>Per species budget calculated as total appropriations divided by the number of listed species.</p>
 <p style='font-size:small'>Source: [FWS Budget Justification](https://www.fws.gov/budget/)</p> 
 
 # Spending Trends
