@@ -6,10 +6,22 @@ navbar:
   left:
     - text: CCI-dev
       href: https://cci-dev.org
-    - icon: fa-question-circle fa-lg
-      href: mailto:esa@defenders.org
-  right:
-    - icon: fa-github fa-lg
-      href: https://github.com/mjevans26/ESApprops
     - text: Defenders
       href: http://www.defenders.org
+  right:
+    - icon: fa-question-circle fa-lg
+      href: mailto:esa@defenders.org
+    - icon: fa-github fa-lg
+      href: https://github.com/mjevans26/ESApprops
+    - icon: fa-share-alt fa-lg
+      menu:
+        - icon: fa-twitter
+          text: Twitter
+          href: https://twitter.com/share?text=Defenders%20of%20Wildlife:%20ESA%20Funding&url=https://cci-dev.org/analysis/ESA_funding/
+        - icon: fa-facebook
+          text: Facebook
+          href: https://www.facebook.com/sharer/sharer.php?s=100&p[url]=https://cci-dev.org/analysis/ESA_funding/
+        - icon: fa-pinterest
+          text: Pinterest
+          href: https://pinterest.com/pin/create/link/?url=https://cci-dev.org/analysis/ESA_funding/&description=Defenders%20of%20Wildlife:%20ESA%20Funding
+

@@ -15,7 +15,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-setwd("C:/Users/mevans/repos/ESApprops")
+# setwd("C:/Users/mevans/repos/ESApprops")
 library(dplyr)
 library(ecosscraper)
 library(highcharter)
