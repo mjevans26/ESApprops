@@ -22,15 +22,6 @@ shinyServer(function(input,output, session){
          height = height)
   }, deleteFile=FALSE)
 
-  output$foxes <- renderImage({
-    width <- session$clientData$output_foxes_width
-    height <- session$clientData$output_foxes_height
-    list(src = "Island_Fox.jpg",
-         contentType = "image/jpg",
-         height = height,
-         alt = "Channel Island Fox")
-  }, deleteFile = FALSE)
-
   output$yesterday <- renderText({
     paste0(as.character(format(Sys.Date()-1, "%m/%d/%Y")), ".")
   })
