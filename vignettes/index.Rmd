@@ -1,0 +1,512 @@
+---
+title: "The Importance of Properly Funding the ESA"
+author: "Defenders of Wildlife"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_document:
+    css: custom.css
+    df_print: paged
+    fig_caption: yes
+    fig_width: 7
+    highlight: tango
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(ecosscraper)
+library(highcharter)
+library(ggplot2)
+library(highcharter)
+library(plotly)
+library(shiny)
+library(shinydashboard)
+library(stringr)
+library(tidyr)
+library(viridis)
+
+load("data/app_data.RData")
+
+gerber2 <- group_by(gerber, O_U, change)%>%
+  summarise(count = n())
+clrs <- data.frame(
+  change = c("Adequate", "Over", "Under"), 
+  color = rev(substr(viridis(3),1,7))
+)
+clrs[] <- lapply(clrs, as.character)
+gerber2$color <- clrs$color[match(gerber2$O_U, clrs$change)]
+
+re <- function(var){switch(var,
+                         "Decreased" = "Declined",
+                         "Increased" = "Improved",
+                         "No Change" = "No Change")}
+gerber2$change <- vapply(gerber2$change, re, c(""), USE.NAMES = FALSE)
+gerber2$O_U[gerber2$O_U == "Adequate"] <- "Adequately"
+#create 'years' dataframe
+years <- mutate(
+  TECP_domestic, 
+  Year = substr(First_Listed,9,12)) %>%
+  select(Year, Federal_Listing_Status, Lead_Region) %>%
+  filter(Federal_Listing_Status == "Endangered"|Federal_Listing_Status == "Threatened")%>%
+  filter(Lead_Region != "NMFS")
+
+years$Status <- sapply(years$Federal_Listing_Status, function(x)
+  if(x == "Proposed Endangered"|x == "Proposed Threatened"){
+    "Proposed"}
+  else{x})
+
+years <- as.data.frame(group_by(years, Year, Federal_Listing_Status)%>%
+  summarise(count = n())%>%
+  spread(Federal_Listing_Status, count))
+
+years$Year <- as.integer(years$Year)
+
+impute <- data.frame(Year = seq(min(years$Year,na.rm=TRUE),
+                                    max(years$Year,na.rm=TRUE),1))
+
+years <- right_join(years, impute, by = c("Year"))
+years$Endangered[is.na(years$Endangered)] <- 0
+years$Threatened[is.na(years$Threatened)] <- 0
+years$Total <- years$Endangered + years$Threatened
+
+years <- mutate(years, cumm = cumsum(Total))
+
+funding$Species <- years$cumm[years$Year > 1972]
+
+
+spending <- as.data.frame(filter(expenditures, Status == "E"|Status == "T"|Status == "E*")%>%
+  group_by(Year, scientific, Population)%>%
+  summarise(FWS = first(FWS_tot),
+            OFed = first(other_fed),
+            State = first(State_tot),
+            Total = first(Species_tot),
+            Group = first(Group),
+            Common = first(Common),
+            Status = first(Status)))
+
+new_FWS <- filter(df0714, Status == "E"|Status == "T"|Status == "E*")%>%
+  group_by(Year)%>%
+  summarise(mn = mean(FWS.Total),
+            s = sd(FWS.Total),
+            U95 = quantile(FWS.Total, 0.95),
+            L95 = quantile(FWS.Total, 0.05),
+            minimum = min(FWS.Total),
+            maximum = max(FWS.Total),
+            top = mean(FWS.Total[FWS.Total > quantile(FWS.Total, .95)]))
+
+FWS <- group_by(spending, Year)%>%
+  summarise(mn = mean(FWS),
+            s = sd(FWS),
+            U95 = quantile(FWS, .95),
+            L95 = quantile(FWS, .05),
+            minimum = min(FWS),
+            maximum = max(FWS),
+            top = mean(FWS[FWS > quantile(FWS, .95)]))
+
+FWS <- arrange(rbind(new_FWS, FWS), Year)
+
+FWS$CF2016 <- funding$CF2016[funding$Year > 2003 & funding$Year < 2015]
+
+#create 'Fed' dataframe
+Fed <- filter(spending, Status == "E"|Status == "T")%>%
+  group_by(Year)%>%
+  summarise(mn = mean(OFed),
+            s = sd(OFed),
+            U95 = quantile(OFed, .95),
+            L95 = quantile(OFed, .05),
+            minimum = min(OFed),
+            maximum = max(OFed),
+            top = mean(OFed[OFed > quantile(OFed, .95)]))
+
+new_Fed <- filter(df0714, Status == "E"|Status == "T"|Status == "E*")%>%
+  group_by(Year)%>%
+  summarise(mn = mean(Other.Fed),
+            s = sd(Other.Fed),
+            U95 = quantile(Other.Fed, 0.95),
+            L95 = quantile(Other.Fed, 0.05),
+            minimum = min(Other.Fed),
+            maximum = max(Other.Fed),
+            top = mean(Other.Fed[Other.Fed > quantile(Other.Fed, .95)]))
+
+Fed <- arrange(rbind(new_Fed, Fed), Year)
+
+Fed$CF2016 <- funding$CF2016[funding$Year > 2003 & funding$Year < 2015]
+
+#Create 'states' dataframe
+states <- filter(expenditures, Status == "E"| Status == "T")%>%
+  group_by(Year, scientific, STATE)%>%
+  summarise(state = sum(state_per_cnty),
+            fws = sum(fws_per_cnty),
+            fed = sum(fed_per_cnty))%>%
+group_by(STATE)%>%
+  summarise(species = n_distinct(scientific),
+            state = mean(state),
+            fws = mean(fws),
+            fed = mean(fed))
+
+#Create Years dataframe
+Years1 <- filter(expenditures, Status == "E"|Status == "T")%>%
+  group_by(Year)%>%
+  summarise(STATE = sum(state_per_cnty),
+            FWS = sum(fws_per_cnty),
+            FED = sum(other_fed_per_cnty))
+
+Years2 <- filter(df0714, Status == "E"|Status == "T")%>%
+  group_by(Year)%>%
+  summarise(STATE = sum(States.Total),
+            FWS = sum(FWS.Total),
+            FED = sum(Other.Fed))
+
+Years <- arrange(rbind(Years1, Years2), Year)
+Years$CF2016 <- funding$CF2016[funding$Year > 2003 & funding$Year < 2015]
+
+#define pallete funciton converting status names to colors
+stat_pal <- function(status){switch(status,
+                                    "Under" = substr(viridis(3)[1],1,7),
+                                    "Adequate" = substr(viridis(3)[2],1,7),
+                                    "Over" = substr(viridis(3)[3],1,7)
+                                    )}
+#rm(stat_fund)
+stat_fund <- list()
+for(i in unique(gerber2$O_U)){
+  ls1 <- list(
+    name = i, 
+    id = i, 
+    value = sum(gerber2$count[gerber2$O_U == i]), 
+    color = stat_pal(i)
+  )
+  stat_fund[[length(stat_fund)+1]] <- ls1
+}
+
+for(i in 1:length(gerber2$count)){
+  ls2 <- list(parent = gerber2$O_U[i], 
+              name = gerber2$change[i], 
+              value = gerber2$count[i], color = NA)
+  stat_fund[[length(stat_fund)+1]] <- ls2
+}
+```
+
+# Overview
+
+Since 1973, the Endangered Species Act (ESA) has been the most important U.S. law protecting plants and animals at risk of extinction. The ESA conserves species by regulating activities that may harm species and by facilitating species recovery. The U.S. Fish and Wildlife Service (FWS) is responsible for conserving the majority of listed species under the ESA, a function that has been impeded by inadequate funding from Congress.
+
+<figure class="figure">
+  <img src="Island_Fox.jpg" class="figure-img img-fluid rounded" alt="Island fox">
+  <figcaption class="figure-caption">Photo courtesy of National Park Service</figcaption>
+</figure>
+
+Several fox species (_Urocyon littoralis_) of the Channel Islands were recovered and delisted in 2016.  Success stories such as these highlight the importance of properly funding the ESA.
+
+# Funding Needs
+
+### Species Recovery Has Been Chronically Underfunded
+
+Congress has provided only a small fraction of the funds needed for recovery. Data from Gerber (2016) shown here illustrate this shortchanging. From 1980 to 2014, the vast majority of listed species with recovery plans were underfunded - receiving less than 90% of the amount needed for recovery. Because funding is correlated with improvement in species status, only 15% of species improved in status from 1989 - 2011.
+
+```{r p1, echo=FALSE, warning=FALSE, error=FALSE}
+fluidPage(
+  fluidRow(
+    column(6,
+      plot_ly() %>% 
+      add_pie(
+        data = count(gerber, O_U),
+        labels = c("Under (<0.90)", "Adequate", "Over (>2x)"),
+        values = ~ n,
+        name = "Funding",
+        marker = list(colors = rev(substr(viridis(3),1,7))),
+        textfont = list(size = 16),
+        legendgroup = "Funding",
+        textinfo = "percent",
+        textposition = "outside",
+        text = ~paste(
+          n, " Species were<br>",
+          c("Adequately funded", "Over funded", "Under funded"), sep = ""),
+        hoverinfo = "text")  %>% 
+      layout(
+        hovermode = "closest",
+        font = list(color = "black"),
+        showlegend = FALSE,
+        legend = list(x = 0.95,
+                      y = 0.95,
+                      bordercolor = "black",
+                      borderwidth = 1),
+        xaxis = list(showgrid = FALSE,
+                     zeroline = FALSE,
+                     showticklabels = FALSE),
+        yaxis = list(showgrid = FALSE,
+                     zeroline = FALSE,
+                     showticklabels = FALSE)
+      )
+    ),
+    column(6,
+      plot_ly() %>%
+      add_trace(
+        data = gerber2, 
+        x = ~change, 
+        y = ~ count, 
+        color = ~paste(O_U, "funded"), 
+        colors = ~color,
+        type = "bar",
+        marker = list(line = list(color = "black", width = 2)),
+        text = ~paste(count, O_U, "funded species", change),
+        hoverinfo = "text") %>%
+      layout(
+        hovermode = "closest", 
+        font = list(color = "black"), 
+        barmode = "stack",
+          legend = list(x = 0.6, y = 0.95, 
+                        bordercolor = "black", borderwidth = 1),
+          yaxis = list(title = "Number of Species"),
+          xaxis = list(title = "Recovery Status (1989 - 2011)", 
+                       tickmode = "auto", tickangle = 0)
+      )
+    )
+  )
+)
+```
+
+<p style='font-size:small'>Source: [Gerber, LR (2016). PNAS 113(13): 3563-3566](http://www.pnas.org/content/113/13/3563.full?tab=ds)</p> 
+
+# Funding Trends
+
+### Funding Has Not Kept Pace with Species Listings
+
+Not only has Congress underfunded recovery for decades, but the average dollar per species has decreased since 2010. This drop has occurred across all endangered species programs at FWS. This decline is the result of the ESA budget consistently decreasing, combined with the continued increase in the number of listed species. 
+
+```{r p2, echo=FALSE, warning=FALSE, error=FALSE}
+fluidPage(
+  fluidRow(
+    column(12,
+      plot_ly(funding, x = ~Year) %>% 
+        add_trace(
+          y = ~Species, 
+          type = "scatter", 
+          mode = "lines", 
+          name = "Listed Species", 
+          yaxis = "y2",
+          text = ~paste(Species, "listed species in", Year), 
+          hoverinfo = "text",
+          fill = "tozeroy", line = list(color = "grey")) %>% 
+        add_trace(
+          y = ~Recovery*CF2016/Species, 
+          type = "scatter", 
+          mode = "lines",
+          name = "Recovery<br>budget", 
+          line = list(color = substr(viridis(4),1,7)[1]),
+          text = ~paste("$",
+            format(Recovery*CF2016/Species, big.mark = ",", big.interval = 3),
+            "per species budgeted for<br>Recovery in", Year, sep=" "), 
+          hoverinfo = "text") %>% 
+    add_trace(y = ~Recovery*CF2016, type = "scatter", mode = "lines", visible = F,
+                name = "Recovery<br>budget", line = list(color = substr(viridis(4),1,7)[1]),
+                text = ~paste("$",format(Recovery*CF2016, big.mark = ",", big.interval = 3),"budgeted for<br>Recovery in", Year, sep=" "), hoverinfo = "text") %>% 
+
+    add_trace(y = ~ConsultOld*CF2016/Species, type = "scatter", mode = "lines",
+              name = "Consultation<br>budget", line = list(color = substr(viridis(4),1,7)[2]),
+              text = ~paste("$",format(ConsultOld*CF2016/Species, big.mark = ",", big.interval = 3),"per species budgeted for<br>Consultation in", Year, sep=" "), hoverinfo = "text") %>% 
+
+    add_trace(y = ~ConsultOld*CF2016, type = "scatter", mode = "lines", visible = F,
+              name = "Consultation<br>budget", line = list(color = substr(viridis(4),1,7)[2]),
+              text = ~paste("$",format(ConsultOld*CF2016, big.mark = ",", big.interval = 3),"budgeted for<br>Consultation in", Year, sep=" "), hoverinfo = "text", visible = F)%>%
+
+    add_trace(y = ~ESP*CF2016/Species, type = "scatter", mode = "lines",
+              name = "Endangered Species<br>budget", line = list(color = substr(viridis(4),1,7)[3]),
+              text = ~paste("$",format(ESP*CF2016/Species, big.mark = ",", big.interval = 3),"per species budgeted for<br>Endangered Species Programs in", Year, sep=" "), hoverinfo = "text")%>%
+
+    add_trace(y = ~ESP*CF2016, type = "scatter", mode = "lines",
+              name = "Endangered Species<br>budget", line = list(color = substr(viridis(4),1,7)[3]), visible = F,
+              text = ~paste("$",format(ESP*CF2016, big.mark = ",", big.interval = 3),"budgeted for<br>Endangered Species Programs in", Year, sep=" "), hoverinfo = "text")%>%
+
+    add_trace(y = ~ESOld*CF2016/Species, type = "scatter", mode = "lines", legendgroup = "2",
+              text = ~paste("$", format(ESOld*CF2016/Species, big.mark = ",", big.interval = 3), "per species budgeted for <br> Ecolocial Services in", Year, sep = " "), hoverinfo = "text",
+              name = "Ecological Services<br>budget", line = list(color = substr(viridis(4),1,7)[4]))%>%
+
+    add_trace(y = ~ESOld*CF2016, type = "scatter", mode = "lines", visible = F,
+              text = ~paste("$", format(ESOld*CF2016, big.mark = ",", big.interval = 3), "budgeted for <br> Ecolocial Services in", Year, sep = " "), hoverinfo = "text",
+              name = "Ecological Services<br>budget", line = list(color = substr(viridis(4),1,7)[4]))%>%
+
+      layout(hovermode = "compare", font = list(color = "black"),
+           title = "Timeline of ESA Appropriations",
+           xaxis = list(title = "Year", range = c(1983, max(funding$Year))),
+           yaxis = list(title = "Appropriations per Species (2016 Dollars)", rangemode = "tozero", overlaying = "y2"),
+           yaxis2 = list(anchor = "x", side = "right", range = c(0, 2000), showticklabels = F),
+           legend = list(bgcolor = "none", orientation = 'h', x = 0, tracegroupgap = 1),
+           updatemenus = list(
+             list(type = "buttons",
+                  title = "butt",
+                  y = 0.95,
+                  x = 0.1,
+                  buttons = list(
+                    list(method = "update",
+                         args = list("visible", list(T,T,F,T,F,T,F,T,F)),
+                         label = "per Species"),
+                    list(method = "update",
+                         args = list("visible", list(T,F,T,F,T,F,T,F,T)),
+                         label = "Total")
+                  )
+             )
+           ))
+    )
+  ),
+  fluidRow(
+    column(12,
+      p(class = "caption",
+        "Use the dropdown button to see total annual appropriations.")
+    )
+  )
+)
+```
+
+<p style='font-size:small'>Source: [FWS Budget Justification](https://www.fws.gov/budget/)</p> 
+
+# Spending Trends
+
+### Federal Agencies Have Been Spending Less on Listed Species
+
+So far we have focused on how much Congress has appropriated to FWS. Here, we show how much federal agencies report spending on listed species. Like appropriations, spending has declined in recent years - since 2011 for FWS, and 2012 for all other federal agencies combined. This graph shows trends in the average spending per species, and the average spending on species in the top 5% of expenditures. As you can see, spending on the top 5% is roughly 10x higher than for the average species. 
+
+```{r p3, echo=FALSE, warning=FALSE, error=FALSE}
+fluidPage(
+  fluidRow(
+    column(12,
+      plot_ly(type = "scatter", mode = "lines", line = list(color = "blue")) %>%
+        add_trace(
+          data = FWS, 
+          x = ~Year, 
+          y = ~ top*CF2016, 
+          line = list(color = substr(viridis(3),1,7)[3], dash = "dash"), 
+          name = "Top 5%<br>(click to show)",
+          text = ~paste(
+            "Mean spending on the top 5% of species<br>was $", 
+            format(top*CF2016, big.mark = ",", big.interval = 3), 
+            " in ", Year, sep = ""), 
+          hoverinfo = "text", visible = "legendonly") %>%
+
+  add_trace(data = FWS, x = ~Year, y = ~mn*CF2016, name = "FWS Average", line = list(color = substr(viridis(3),1,7)[2]),
+            text = ~paste("FWS spent $", format(mn*CF2016, big.mark = ",", big.interval = 3), "<br>per species in ", Year, sep = ""), hoverinfo = "text")%>%
+
+  #add_trace(data = Fed, x = ~Year, y = ~U95*CF2016, name = "95%", fill = "none", visible = F)%>%
+  add_trace(data = Fed, x = ~Year, y = ~ top*CF2016, type = "scatter", name = "Top 5%<br>(click to show)", line = list(color = substr(viridis(3),1,7)[3], dash = "dash"),
+            text = ~paste("Mean spending on the top 5% of speicies was $", format(top*CF2016, big.mark = ",", big.interval = 3), " in ", Year, sep = ""), hoverinfo = "text", visible = F)%>%
+
+  add_trace(data = Fed, x = ~Year, y = ~mn*CF2016, name = "Other Fed<br>Average", line = list(color = substr(viridis(3),1,7)[1]),
+          text = ~paste("Other federal agencies spent<br>$", format(mn*CF2016, big.mark = ",", big.interval = 3), " per species in ", Year, sep = ""), hoverinfo = "text", visible = F)%>%
+
+  layout(hovermode = "closest", font = list(color = "black"),
+         title = "Federal Spending on ESA Listed Species",
+         xaxis = list(title = "Year"),
+         yaxis = list(title = "Spending per Species (2016 Dollars)", rangemode = "tozero"),
+         legend = list(x = 0.8, y = 0.15, bordercolor = "black", borderwidth = 1),
+         updatemenus = list(
+           list(type = "buttons",
+                title = "butt",
+                y = 0.95,
+                x = 0.1,
+                buttons = list(
+                  list(method = "update",
+                       args = list("visible", list(F,"legendonly",T,F,F)),
+                       label = "FWS"),
+                  list(method = "update",
+                       args = list("visible", list(F,F,F,"legendonly",T)),
+                       label = "Other Fed")
+                )
+           )
+         ))
+    )
+  ),
+  fluidRow(
+    column(12,
+      p(class = "caption",
+        "Use the dropdown button to select FWS vs. Other federal expenditures.")
+    )
+  )
+)
+```
+
+<p style='font-size:small'>Source: [FWS Expenditure Reports](https://www.fws.gov/Endangered/esa-library/index.html)</p>
+
+# State Spending
+
+### Most Spending for ESA Activities Comes From Federal Agencies
+
+On average, states spend 26% as much as FWS, and 4% as much as other federal agencies. This pattern has persisted over time. The amount states spend is highly relevant to current discussions about their role in implementing the ESA.
+
+```{r p4, echo=FALSE, warning=FALSE, error=FALSE}
+fluidPage(
+  fluidRow(
+    column(12,
+      plot_ly(Years, x = ~Year)%>%
+        add_trace(
+          y = ~FWS*CF2016, 
+          type = "bar", 
+          name = "FWS", 
+          marker = list(color = substr(viridis(4),1,7)[2]),
+          text = ~paste(
+            "$", format(FWS*CF2016, big.mark = ",", big.interval = 3), 
+            " spent by FWS in ", Year, sep = ""), 
+          hoverinfo = "text")%>%
+        
+        add_trace(
+          y = ~FED*CF2016, 
+          type = "bar", 
+          name = "Other Federal", 
+          marker = list(color = substr(viridis(4),1,7)[1]),
+          text = ~paste(
+            "$",format(FED*CF2016, big.mark = ",", big.interval = 3), 
+            " spent by Other Federal agencies in ", Year, sep = ""), 
+          hoverinfo = "text")%>%
+        
+        add_trace(
+          y = ~STATE*CF2016, 
+          type = "bar", 
+          name = "All States", 
+          marker = list(color = substr(viridis(4),1,7)[4]),
+          text = ~paste(
+            "$", format(STATE*CF2016, big.mark = ",", big.interval = 3), 
+            " spent by State agencies in ", 
+            Year, sep = ""), 
+          hoverinfo = "text")%>%
+      
+        layout(
+          hovermode = "closest", 
+          font = list(color = "black"),
+          title = "Comparing Federal and State Spending on Listed Species",
+          xaxis = list(title = "Fiscal Year"),
+          yaxis = list(title = "Expenditures (2016 Dollars)"),
+          legend = list(x = 0.05, y = 0.95, 
+                        bordercolor = "black", borderwidth = 1))
+    )
+  ),
+  fluidRow(
+    column(12,
+      p(class = "caption",
+        "Categories may be turned off/on by clicking on the legend entry.")
+    )
+  )
+)
+```
+
+<p style='font-size:small'>Source: [FWS Expenditure Reports](https://www.fws.gov/Endangered/esa-library/index.html)</p>
+
+<br><br>
+
+------
+
+<br><br>
+
+```{r footer, echo=FALSE, warning=FALSE, error=FALSE}
+fluidPage(
+  fluidRow(
+    column(2),
+    column(8, 
+      div(
+        HTML('<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"> <img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a> <br /> This <span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/InteractiveResource" rel="dct:type">work</span> by <a xmlns:cc="http://creativecommons.org/ns" href="http://defenders.org" property="cc:attributionName" rel="cc:attributionURL">Defenders of Wildlife</a> is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>. <br />'),
+                           style = "text-align: center"
+      )
+    ),
+    column(2)
+  )
+)
+```
