@@ -1,6 +1,6 @@
 ---
 title: "The Importance of Properly Funding the ESA"
-author: "Defenders of Wildlife"
+author: "Michael Evans"
 date: "`r Sys.Date()`"
 output:
   rmarkdown::html_document:
@@ -249,7 +249,7 @@ fluidPage(
 
 ### Funding Has Not Kept Pace with Species Listings
 
-Not only has Congress underfunded recovery for decades, but the amount of funding per species<sup>*</sup> has decreased since 2010. This drop has occurred across all endangered species programs at FWS. This decline is the result of the ESA budget decreasing since 2010, combined with the continued increase in the number of listed species. Prior to this decline, the per species budget had been stagnant for almost a decade. 
+Not only has Congress underfunded recovery for decades, but the amount of funding per species<sup>*</sup> has decreased since 2010, after adjusting for inflation. This drop has occurred across all endangered species programs at FWS. This decline is the result of the ESA budget decreasing since 2010, combined with the continued increase in the number of listed species. Prior to this decline, the per species budget had been stagnant for almost a decade. 
 
 ```{r p2, echo=FALSE, warning=FALSE, error=FALSE}
 fluidPage(
@@ -334,7 +334,7 @@ fluidPage(
   )
 )
 ```
-<p style='font-size:small'><sup>*</sup>Per species budget calculated as total appropriations divided by the number of listed species.</p>
+<p style='font-size:small'><sup>*</sup>Per species budget calculated as total appropriations - adjusted for inflation to 2016 dollars - divided by the number of listed species.</p>
 <p style='font-size:small'>Source: [FWS Budget Justification](https://www.fws.gov/budget/)</p> 
 
 # Spending Trends

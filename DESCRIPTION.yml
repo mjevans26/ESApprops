@@ -1,0 +1,37 @@
+Dataset: ESA_expenditures_0714
+Title: Expenditure Data for ESA-listed Species, 2004-2007/2014
+Version: 1.0
+Date: 2017-03-01
+SHA-256: 8623af410fad4fc14ebf136edf7f5cf63dcf1b7ecd28da764a65e67e482039dc
+License: CC-BY
+Source: Annual expenditure reports, www.fws.gov/endangered/esa-library
+URL: NA
+Authors: person(first = Michael, last = Evans, email = mevans@defenders.org,
+    role = c(aut, cre))
+Description: The US Fish and Wildlife Service (FWS) requests that federal
+    agencies and states report their expenditures on species listed under the
+    US Endangered Species Act (ESA) each year. There is no differentiation
+    between expenditures on compliance (e.g., section 7) and recovery actions.
+    FWS then compiles a report of expenditures that they provide to Congress
+    and the public. This dataset includes "Table 1" (non-land expenditures)
+    from the 2004-2007 and 2014 annual expenditure reports.
+Archives:
+    figshare: NA
+    Zenodo: NA
+Applications:
+    ESA_expenditures: https://cci-dev.org/shiny/analysis/ESA_funding
+Variables:
+    Year: Fiscal year of expenditures
+    Status: The species ESA listing status, e.g., threatened or endangered
+    FWS_tot: Total spending on the year+species by FWS
+    other_fed: Total spending on the year+species by other federal
+        agencies that reported expenditures to FWS
+    Fed_tot: Sum of FWS_tot and other_fed
+    State_tot: Total spending on the year+species+population by states that
+        reported expenditures to FWS
+    Total: Total spending on the year per species
+Related: NA
+Depends: NA
+Comments: Will incorporate species names in order to join with 2008 - 2013 data
+as soon as possible.
+

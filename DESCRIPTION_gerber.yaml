@@ -1,0 +1,38 @@
+Dataset: ESA_recovery_funding
+Title: Funding and Changes in Status for ESA-listed Species, 1984 - 2014
+Version: 1.0
+Date: 2017-03-01
+SHA-256: 7a175a9dc6624e93d4488180cacdaaa8aaabc1050d44691bee37f838088ce130
+License: CC-BY
+Source: Gerber, LR. 2016. Conservation triage or injurious neglect in endangered species recovery.
+  PNAS 113(13): 3563-3566
+URL: http://www.pnas.org/content/113/13/3563.full
+Authors: person(first = Michael, last = Evans, email = mevans@defenders.org,
+    role = c(aut)),
+    person(first = Leah, last = Gerber, email = Leah.Gerber@asu.edu, role = c(cre))
+Description: The U.S. Fish and Wildlife Service (FWS), is required to create recovery
+    plans for species listed as threatened or endangered under the U.S. Endangered
+    Species Act (ESA).  These documents specify criteria needed for species to be delisted
+    , actions for achieving recovery criteria, and the amount of funding required for recovery.
+    This dataset contains the funding requested in species' recovery plans,
+    funding received as reported in annual FWS expenditures, and species' status
+    as reported in biannual reports for all listed species with recovery plans
+    written between 1984 and 2014.
+Archives:
+    figshare: NA
+    Zenodo: NA
+Applications:
+    ESA_funding: https://cci-dev.org/analysis/ESA_funding
+Variables:
+    Scientific.Name: Species scientific name
+    Taxon: Taxonomic grouping used by FWS
+    Year: Year of recovery plan finalization
+    Status: Net number of years species' status reported as declining or improving
+    received: Proportion of species' requested budget received
+    Budget: Allocated budget
+    O_U: Factor categorizing species as 'Over' (> 2x), 'Under' (< 0.9x), or 'Adequately' (0.9 - 2x) funded
+    change: Factor categorizing species status as 'Increased', 'Decreased', or 'No Change'
+Related: NA
+Depends: NA
+Comments: Data taken from Appendix S1 in Gerber (2016).
+

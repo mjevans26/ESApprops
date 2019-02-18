@@ -1,0 +1,39 @@
+Dataset: ESA_funding
+Title: Federal Budget Appropriation Data for ESA-listed Species, 1984-2016
+Version: 1.0
+Date: 2017-03-01
+SHA-256: 2a1274367029cde0a559a104e58cd2c38b33ee6c509ca00c9d8a4fe528add457
+License: CC-BY
+Source: Annual budget reports, http://www.fws.gov/budget
+URL: NA
+Authors: person(first = Michael, last = Evans, email = mevans@defenders.org,
+    role = c(aut, cre))
+Description: Federal funding for the US Fish and Wildlife Service (FWS) is
+    appropriated into numerous programs responsible for conserving plants and animals.
+    Many of these programs cary out actions required to implement various parts of the
+    US Endangered Species Act (ESA), such as consultation and species recovery.
+    This dataset includes budget appropriation for programs funding endangered species
+    conservation and recovery from fiscal year 1984 through 2016.
+
+Archives:
+    figshare: NA
+    Zenodo: NA
+Applications:
+    ESA_expenditures: https://cci-dev.org/analysis/ESA_funding
+Variables:
+    Year: Fiscal year of appropriations
+    Species: Total number of threatened and endangered species
+    CPI: Consumer price index
+    CF2016: Conversion factor standardizing to 2016 dollars
+    ESOld: Amount of federal budget appropriated the FWS Ecological Services program (1984 - 2015)
+    ESNew: Amount of federal budget appropriated the FWS Ecological Services program (2014 - 2016)
+    ESP: Amount of federal budget appropriated the FWS Endangered Species program
+    Recovery: Amount of federal budget appropriated the FWS Recovery program
+    ConsultOld: Amount of federal budget appropriated the FWS Consultation program (1984 - 2015)
+    ConsultNew: Amount of federal budget appropriated the FWS Consultation program (2014 - 2016)
+
+Related: NA
+Depends: NA
+Comments: The organization of programs changed in 2014, such that appropriations to certain programs cannot be compared
+    before and after this fiscal year.
+
