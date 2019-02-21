@@ -16,10 +16,9 @@ output:
 
 ```{r setup, include=FALSE}
 library(dplyr)
-library(ecosscraper)
-library(highcharter)
+#library(ecosscraper)
 library(ggplot2)
-library(highcharter)
+#library(highcharter)
 library(plotly)
 library(shiny)
 library(shinydashboard)
@@ -28,6 +27,8 @@ library(tidyr)
 library(viridis)
 
 load("data/app_data.RData")
+full_TECP <- readRDS(file = "data/full_TECP.rds")
+TECP_domestic <- filter(full_TECP, u_s_or_foreign_listed != "Foreign")
 
 gerber2 <- group_by(gerber, O_U, change)%>%
   summarise(count = n())
@@ -47,19 +48,19 @@ gerber2$O_U[gerber2$O_U == "Adequate"] <- "Adequately"
 #create 'years' dataframe
 years <- mutate(
   TECP_domestic, 
-  Year = substr(First_Listed,9,12)) %>%
-  select(Year, Federal_Listing_Status, Lead_Region) %>%
-  filter(Federal_Listing_Status == "Endangered"|Federal_Listing_Status == "Threatened")%>%
-  filter(Lead_Region != "NMFS")
+  Year = substr(first_listed,9,12)) %>%
+  select(Year, federal_listing_status, lead_region) %>%
+  filter(federal_listing_status == "Endangered"|federal_listing_status == "Threatened")%>%
+  filter(lead_region != "NMFS")
 
-years$Status <- sapply(years$Federal_Listing_Status, function(x)
+years$Status <- sapply(years$federal_listing_status, function(x)
   if(x == "Proposed Endangered"|x == "Proposed Threatened"){
     "Proposed"}
   else{x})
 
-years <- as.data.frame(group_by(years, Year, Federal_Listing_Status)%>%
+years <- as.data.frame(group_by(years, Year, federal_listing_status)%>%
   summarise(count = n())%>%
-  spread(Federal_Listing_Status, count))
+  spread(federal_listing_status, count))
 
 years$Year <- as.integer(years$Year)
 
@@ -107,7 +108,7 @@ FWS <- group_by(spending, Year)%>%
 
 FWS <- arrange(rbind(new_FWS, FWS), Year)
 
-FWS$CF2016 <- funding$CF2016[funding$Year > 2003 & funding$Year < 2015]
+FWS$CF2018 <- funding$CF2018[funding$Year > 2003 & funding$Year < 2015]
 
 #create 'Fed' dataframe
 Fed <- filter(spending, Status == "E"|Status == "T")%>%
@@ -132,7 +133,7 @@ new_Fed <- filter(df0714, Status == "E"|Status == "T"|Status == "E*")%>%
 
 Fed <- arrange(rbind(new_Fed, Fed), Year)
 
-Fed$CF2016 <- funding$CF2016[funding$Year > 2003 & funding$Year < 2015]
+Fed$CF2018 <- funding$CF2018[funding$Year > 2003 & funding$Year < 2015]
 
 #Create 'states' dataframe
 states <- filter(expenditures, Status == "E"| Status == "T")%>%
@@ -160,7 +161,13 @@ Years2 <- filter(df0714, Status == "E"|Status == "T")%>%
             FED = sum(Other.Fed))
 
 Years <- arrange(rbind(Years1, Years2), Year)
-Years$CF2016 <- funding$CF2016[funding$Year > 2003 & funding$Year < 2015]
+
+#Until we get the expenditures data processed, add 2015 and 2016 totals manualy
+Years <- rbind(Years,
+               c(2015, 65042281, 272163520, 1059048285),
+               c(2016, 86349408, 184409644, 1104779474))
+
+Years$CF2018 <- funding$CF2018[funding$Year > 2003 & funding$Year < 2017]
 
 #define pallete funciton converting status names to colors
 stat_pal <- function(status){switch(status,
@@ -260,70 +267,165 @@ fluidPage(
           y = ~Species, 
           type = "scatter", 
           mode = "lines", 
-          name = "Listed Species", 
+          name = "Listed Species",
+          visible = T,
           yaxis = "y2",
           text = ~paste(Species, "listed species in", Year), 
           hoverinfo = "text",
           fill = "tozeroy", line = list(color = "grey")) %>% 
         add_trace(
-          y = ~Recovery*CF2016/Species, 
+          type = 'scatter', 
+          mode = 'lines',
+          y = ~c(0, max(ESOld/Species, ESNew/Species, na.rm = TRUE)),
+          x = c(2015, 2015),
+          line = list(dash = 'dash', color = 'black'),
+          showlegend = FALSE,
+          hoverinfo = 'none',
+          visible = T
+        )%>%
+        add_trace(
+          y = ~Recovery*CF2018/Species, 
           type = "scatter", 
           mode = "lines",
           name = "Recovery<br>budget", 
+          visible = T,
           line = list(color = substr(viridis(4),1,7)[1]),
           text = ~paste("$",
-            format(Recovery*CF2016/Species, big.mark = ",", big.interval = 3),
-            "per species budgeted for<br>Recovery in", Year, sep=" "), 
-          hoverinfo = "text") %>% 
-    add_trace(y = ~Recovery*CF2016, type = "scatter", mode = "lines", visible = F,
-                name = "Recovery<br>budget", line = list(color = substr(viridis(4),1,7)[1]),
-                text = ~paste("$",format(Recovery*CF2016, big.mark = ",", big.interval = 3),"budgeted for<br>Recovery in", Year, sep=" "), hoverinfo = "text") %>% 
-
-    add_trace(y = ~ConsultOld*CF2016/Species, type = "scatter", mode = "lines",
-              name = "Consultation<br>budget", line = list(color = substr(viridis(4),1,7)[2]),
-              text = ~paste("$",format(ConsultOld*CF2016/Species, big.mark = ",", big.interval = 3),"per species budgeted for<br>Consultation in", Year, sep=" "), hoverinfo = "text") %>% 
-
-    add_trace(y = ~ConsultOld*CF2016, type = "scatter", mode = "lines", visible = F,
-              name = "Consultation<br>budget", line = list(color = substr(viridis(4),1,7)[2]),
-              text = ~paste("$",format(ConsultOld*CF2016, big.mark = ",", big.interval = 3),"budgeted for<br>Consultation in", Year, sep=" "), hoverinfo = "text", visible = F)%>%
-
-    add_trace(y = ~ESP*CF2016/Species, type = "scatter", mode = "lines",
-              name = "Endangered Species<br>budget", line = list(color = substr(viridis(4),1,7)[3]),
-              text = ~paste("$",format(ESP*CF2016/Species, big.mark = ",", big.interval = 3),"per species budgeted for<br>Endangered Species Programs in", Year, sep=" "), hoverinfo = "text")%>%
-
-    add_trace(y = ~ESP*CF2016, type = "scatter", mode = "lines",
-              name = "Endangered Species<br>budget", line = list(color = substr(viridis(4),1,7)[3]), visible = F,
-              text = ~paste("$",format(ESP*CF2016, big.mark = ",", big.interval = 3),"budgeted for<br>Endangered Species Programs in", Year, sep=" "), hoverinfo = "text")%>%
-
-    add_trace(y = ~ESOld*CF2016/Species, type = "scatter", mode = "lines", legendgroup = "2",
-              text = ~paste("$", format(ESOld*CF2016/Species, big.mark = ",", big.interval = 3), "per species budgeted for <br> Ecolocial Services in", Year, sep = " "), hoverinfo = "text",
-              name = "Ecological Services<br>budget", line = list(color = substr(viridis(4),1,7)[4]))%>%
-
-    add_trace(y = ~ESOld*CF2016, type = "scatter", mode = "lines", visible = F,
-              text = ~paste("$", format(ESOld*CF2016, big.mark = ",", big.interval = 3), "budgeted for <br> Ecolocial Services in", Year, sep = " "), hoverinfo = "text",
-              name = "Ecological Services<br>budget", line = list(color = substr(viridis(4),1,7)[4]))%>%
-
-      layout(hovermode = "compare", font = list(color = "black"),
-           title = "Timeline of ESA Appropriations",
-           xaxis = list(title = "Year", range = c(1983, max(funding$Year))),
-           yaxis = list(title = "Appropriations per Species (2016 Dollars)", rangemode = "tozero", overlaying = "y2"),
-           yaxis2 = list(anchor = "x", side = "right", range = c(0, 2000), showticklabels = F),
-           legend = list(bgcolor = "none", orientation = 'h', x = 0, tracegroupgap = 1),
+            format(Recovery*CF2018/Species, big.mark = ",", big.interval = 3),
+            "per species budgeted for<br>Recovery in", Year, sep=" "),
+          hoverinfo = "text") %>%
+        add_trace(y = ~Recovery*CF2018, type = "scatter", mode = "lines",
+                  visible = F,
+                name = "Recovery<br>budget",
+                line = list(color = substr(viridis(4),1,7)[1]),
+                text = ~paste("$",
+                              format(Recovery*CF2018, big.mark = ",", big.interval = 3),
+                              "budgeted for<br>Recovery in",
+                              Year, sep=" "),
+                hoverinfo = "text") %>% 
+        add_trace(y = ~ConsultOld*CF2018/Species, type = "scatter", mode = "lines",
+                  visible = T,
+                  name = "Consultation<br>budget",
+                  line = list(color = substr(viridis(4),1,7)[2]),
+                  text = ~paste("$",
+                                format(ConsultOld*CF2018/Species, big.mark = ",", big.interval = 3),
+                                "per species budgeted for<br>Consultation in",
+                                Year, sep=" "),
+                  hoverinfo = "text") %>%
+        add_trace(y = ~ConsultNew*CF2018/Species, type = "scatter", mode = "lines",
+                  visible = T,
+                  name = "Consultation<br>budget",
+                  line = list(color = substr(viridis(4),1,7)[2], dash = 'dash'),
+                  text = ~paste("$",
+                                format(ConsultNew*CF2018/Species, big.mark = ",", big.interval = 3),
+                                "per species budgeted for<br>Consultation in",
+                                Year, sep=" "),
+                  hoverinfo = "text",
+                  showlegend = FALSE) %>%
+        add_trace(y = ~ConsultOld*CF2018, type = "scatter", mode = "lines",
+                  visible = F,
+                  name = "Consultation<br>budget",
+                  line = list(color = substr(viridis(4),1,7)[2]),
+                  text = ~paste("$",
+                                format(ConsultOld*CF2018, big.mark = ",", big.interval = 3),
+                                "budgeted for<br>Consultation in", Year, sep=" "),
+                  hoverinfo = "text")%>%
+        add_trace(y = ~ConsultNew*CF2018, type = "scatter", mode = "lines",
+                  visible = F,
+                  name = "Consultation<br>budget",
+                  line = list(color = substr(viridis(4),1,7)[2], dash = 'dash'),
+                  text = ~paste("$",
+                                format(ConsultOld*CF2018, big.mark = ",", big.interval = 3),
+                                "budgeted for<br>Consultation in", Year, sep=" "),
+                  hoverinfo = "text")%>%
+        add_trace(y = ~ESP*CF2018/Species, type = "scatter", mode = "lines",
+                  visible = T,
+                  name = "Endangered<br>Species budget",
+                  line = list(color = substr(viridis(4),1,7)[3]),
+                  text = ~paste("$",
+                                format(ESP*CF2018/Species, big.mark = ",", big.interval = 3),
+                                "per species budgeted for<br>Endangered Species Programs in",
+                                Year, sep=" "),
+                  hoverinfo = "text")%>%
+        add_trace(y = ~ESP*CF2018, type = "scatter", mode = "lines",
+                  name = "Endangered<br>Species budget",
+                  line = list(color = substr(viridis(4),1,7)[3]),
+                  visible = F,
+                  text = ~paste("$",
+                            format(ESP*CF2018, big.mark = ",", big.interval = 3),"budgeted for<br>Endangered Species Programs in",
+                            Year, sep=" "),
+                  hoverinfo = "text")%>%
+        add_trace(y = ~ESOld*CF2018/Species, type = "scatter", mode = "lines",
+                  visible = T,
+                  legendgroup = "2",
+                  text = ~paste("$",
+                                format(ESOld*CF2018/Species, big.mark = ",", big.interval = 3),
+                                "per species budgeted for <br> Ecolocial Services in",
+                                Year, sep = " "),
+                  hoverinfo = "text",
+                  name = "Ecological Services<br>budget",
+                  line = list(color = substr(viridis(4),1,7)[4]))%>%
+        add_trace(y = ~ESNew*CF2018/Species, type = "scatter", mode = "lines",
+                  visible = T,
+                  legendgroup = "2",
+                  text = ~paste("$",
+                                format(ESNew*CF2018/Species, big.mark = ",", big.interval = 3),
+                                "per species budgeted for <br> Ecolocial Services in",
+                                Year, sep = " "),
+                  hoverinfo = "text",
+                  name = "Ecological Services<br>budget",
+                  line = list(color = substr(viridis(4),1,7)[4], dash = 'dash'),
+                  showlegend = FALSE)%>%
+        add_trace(y = ~ESOld*CF2018, type = "scatter", mode = "lines",
+                  visible = F,
+              text = ~paste("$",
+                            format(ESOld*CF2018, big.mark = ",", big.interval = 3),
+                            "budgeted for <br> Ecolocial Services in",
+                            Year, sep = " "),
+              hoverinfo = "text",
+              name = "Ecological Services<br>budget",
+              line = list(color = substr(viridis(4),1,7)[4]))%>%
+        add_trace(y = ~ESNew*CF2018, type = "scatter", mode = "lines",
+                  visible = F,
+                  text = ~paste("$",
+                            format(ESOld*CF2018, big.mark = ",", big.interval = 3),
+                            "budgeted for <br> Ecolocial Services in",
+                            Year, sep = " "),
+              hoverinfo = "text",
+              name = "Ecological Services<br>budget",
+              line = list(color = substr(viridis(4),1,7)[4], dash = 'dash')
+              )%>%
+        layout(
+          hovermode = "compare",
+          font = list(color = "black"),
+          title = "Timeline of ESA Appropriations",
+          xaxis = list(title = "Year", range = c(1983, max(funding$Year))),
+          yaxis = list(title = "Appropriations per Species (2018 Dollars)",
+                        rangemode = "tozero", overlaying = "y2"),
+           yaxis2 = list(anchor = "x", side = "right", range = c(0, 2000),
+                         showticklabels = F),
+           legend = list(bgcolor = "none",
+                         orientation = 'v',
+                         x = 1, y = 0.7, tracegroupgap = 2),
            updatemenus = list(
-             list(type = "buttons",
-                  title = "butt",
-                  y = 0.95,
-                  x = 0.1,
-                  buttons = list(
-                    list(method = "update",
-                         args = list("visible", list(T,T,F,T,F,T,F,T,F)),
-                         label = "per Species"),
-                    list(method = "update",
-                         args = list("visible", list(T,F,T,F,T,F,T,F,T)),
-                         label = "Total")
+             list(
+               #type = "dropdown",
+               #active = 0,
+               y = 0.6,
+               x = 0.3,
+               buttons = list(
+                    list(method = "restyle",
+                         args = list("visible",
+                                     list(T, T, T, F, T, T, F, F, T, F, T, T, F, F)),
+                         label = "$/Species"),
+                    list(method = "restyle",
+                         args = list("visible",
+                                     list(T, T, F, T, F, F, T, T, F, T, F, F, T, T)),
+                         label = "Total $")
+                    )
                   )
              )
-           ))
+           )
     )
   ),
   fluidRow(
@@ -334,7 +436,7 @@ fluidPage(
   )
 )
 ```
-<p style='font-size:small'><sup>*</sup>Per species budget calculated as total appropriations - adjusted for inflation to 2016 dollars - divided by the number of listed species.</p>
+<p style='font-size:small'><sup>*</sup>Per species budget calculated as total appropriations - adjusted for inflation to 2018 dollars - divided by the number of listed species. The structure of the FWS Endangered Species Program changed in 2015, indicated by dashed lines.</p>
 <p style='font-size:small'>Source: [FWS Budget Justification](https://www.fws.gov/budget/)</p> 
 
 # Spending Trends
@@ -351,42 +453,47 @@ fluidPage(
         add_trace(
           data = FWS, 
           x = ~Year, 
-          y = ~ top*CF2016, 
+          y = ~ top*CF2018, 
           line = list(color = substr(viridis(3),1,7)[3], dash = "dash"), 
           name = "Top 5%<br>(click to show)",
           text = ~paste(
             "Mean spending on the top 5% of species<br>was $", 
-            format(top*CF2016, big.mark = ",", big.interval = 3), 
+            format(top*CF2018, big.mark = ",", big.interval = 3), 
             " in ", Year, sep = ""), 
           hoverinfo = "text", visible = "legendonly") %>%
-
-  add_trace(data = FWS, x = ~Year, y = ~mn*CF2016, name = "FWS Average", line = list(color = substr(viridis(3),1,7)[2]),
-            text = ~paste("FWS spent $", format(mn*CF2016, big.mark = ",", big.interval = 3), "<br>per species in ", Year, sep = ""), hoverinfo = "text")%>%
-
-  #add_trace(data = Fed, x = ~Year, y = ~U95*CF2016, name = "95%", fill = "none", visible = F)%>%
-  add_trace(data = Fed, x = ~Year, y = ~ top*CF2016, type = "scatter", name = "Top 5%<br>(click to show)", line = list(color = substr(viridis(3),1,7)[3], dash = "dash"),
-            text = ~paste("Mean spending on the top 5% of speicies was $", format(top*CF2016, big.mark = ",", big.interval = 3), " in ", Year, sep = ""), hoverinfo = "text", visible = F)%>%
-
-  add_trace(data = Fed, x = ~Year, y = ~mn*CF2016, name = "Other Fed<br>Average", line = list(color = substr(viridis(3),1,7)[1]),
-          text = ~paste("Other federal agencies spent<br>$", format(mn*CF2016, big.mark = ",", big.interval = 3), " per species in ", Year, sep = ""), hoverinfo = "text", visible = F)%>%
-
-  layout(hovermode = "closest", font = list(color = "black"),
-         title = "Federal Spending on ESA Listed Species",
-         xaxis = list(title = "Year"),
-         yaxis = list(title = "Spending per Species (2016 Dollars)", rangemode = "tozero"),
-         legend = list(x = 0.8, y = 0.15, bordercolor = "black", borderwidth = 1),
-         updatemenus = list(
-           list(type = "buttons",
-                title = "butt",
-                y = 0.95,
-                x = 0.1,
-                buttons = list(
-                  list(method = "update",
-                       args = list("visible", list(F,"legendonly",T,F,F)),
-                       label = "FWS"),
-                  list(method = "update",
-                       args = list("visible", list(F,F,F,"legendonly",T)),
-                       label = "Other Fed")
+        add_trace(data = FWS, x = ~Year, y = ~mn*CF2018, name = "FWS Average",
+                  line = list(color = substr(viridis(3),1,7)[2]),
+                  text = ~paste("FWS spent $", format(mn*CF2018, big.mark = ",", big.interval = 3), "<br>per species in ", Year, sep = ""),
+                  hoverinfo = "text")%>%
+        #add_trace(data = Fed, x = ~Year, y = ~U95*CF2018, name = "95%", fill = "none", visible = F)%>%
+        add_trace(data = Fed, x = ~Year, y = ~ top*CF2018,
+                  type = "scatter", name = "Top 5%<br>(click to show)",
+                  line = list(color = substr(viridis(3),1,7)[3], dash = "dash"),
+                  text = ~paste("Mean spending on the top 5% of speicies was $", format(top*CF2018, big.mark = ",", big.interval = 3), " in ", Year, sep = ""),
+                  hoverinfo = "text", visible = F)%>%
+        add_trace(data = Fed, x = ~Year, y = ~mn*CF2018,
+                  name = "Other Fed<br>Average",
+                  line = list(color = substr(viridis(3),1,7)[1]),
+                  text = ~paste("Other federal agencies spent<br>$", format(mn*CF2018, big.mark = ",", big.interval = 3), " per species in ", Year, sep = ""),
+                  hoverinfo = "text", visible = F)%>%
+        layout(hovermode = "closest", font = list(color = "black"),
+               title = "Federal Spending on ESA Listed Species",
+               xaxis = list(title = "Year"),
+               yaxis = list(title = "Spending per Species (2018 Dollars)",
+                            rangemode = "tozero"),
+               legend = list(x = 0.8, y = 0.15, bordercolor = "black", borderwidth = 1),
+               updatemenus = list(
+                 list(type = "buttons",
+                      title = "butt",
+                      y = 0.95,
+                      x = 0.1,
+                      buttons = list(
+                        list(method = "restyle",
+                             args = list("visible", list(F,"legendonly",T,F,F)),
+                             label = "FWS"),
+                        list(method = "restyle",
+                             args = list("visible", list(F,F,F,"legendonly",T)),
+                             label = "Other Fed")
                 )
            )
          ))
@@ -415,32 +522,32 @@ fluidPage(
     column(12,
       plot_ly(Years, x = ~Year)%>%
         add_trace(
-          y = ~FWS*CF2016, 
+          y = ~FWS*CF2018, 
           type = "bar", 
           name = "FWS", 
           marker = list(color = substr(viridis(4),1,7)[2]),
           text = ~paste(
-            "$", format(FWS*CF2016, big.mark = ",", big.interval = 3), 
+            "$", format(FWS*CF2018, big.mark = ",", big.interval = 3), 
             " spent by FWS in ", Year, sep = ""), 
           hoverinfo = "text")%>%
         
         add_trace(
-          y = ~FED*CF2016, 
+          y = ~FED*CF2018, 
           type = "bar", 
           name = "Other Federal", 
           marker = list(color = substr(viridis(4),1,7)[1]),
           text = ~paste(
-            "$",format(FED*CF2016, big.mark = ",", big.interval = 3), 
+            "$",format(FED*CF2018, big.mark = ",", big.interval = 3), 
             " spent by Other Federal agencies in ", Year, sep = ""), 
           hoverinfo = "text")%>%
         
         add_trace(
-          y = ~STATE*CF2016, 
+          y = ~STATE*CF2018, 
           type = "bar", 
           name = "All States", 
           marker = list(color = substr(viridis(4),1,7)[4]),
           text = ~paste(
-            "$", format(STATE*CF2016, big.mark = ",", big.interval = 3), 
+            "$", format(STATE*CF2018, big.mark = ",", big.interval = 3), 
             " spent by State agencies in ", 
             Year, sep = ""), 
           hoverinfo = "text")%>%
@@ -450,7 +557,7 @@ fluidPage(
           font = list(color = "black"),
           title = "Comparing Federal and State Spending on Listed Species",
           xaxis = list(title = "Fiscal Year"),
-          yaxis = list(title = "Expenditures (2016 Dollars)"),
+          yaxis = list(title = "Expenditures (2018 Dollars)"),
           legend = list(x = 0.05, y = 0.95, 
                         bordercolor = "black", borderwidth = 1))
     )
